@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --hajime-blue: #0055A4;
+  --hajime-black: #1A1A1A;
+  --hajime-white: #FFFFFF;
+}
+
+/* Adicione isto para facilitar o uso no HTML */
+@layer components {
+  .bg-hajime-blue {
+    background-color: var(--hajime-blue);
+  }
+  .bg-hajime-black {
+    background-color: var(--hajime-black);
+  }
+  .text-hajime-blue {
+    color: var(--hajime-blue);
+  }
+}
+
+body {
+  color: var(--hajime-black);
+  background: var(--hajime-white);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
