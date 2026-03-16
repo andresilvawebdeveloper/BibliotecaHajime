@@ -42,8 +42,8 @@ export default function LoginPage() {
           style={logoStyle} 
         />
         
-        <h2 style={titleStyle}>Hajime Manager</h2>
-        <p style={subtitleStyle}>Inicie sessão para aceder à biblioteca técnica.</p>
+        <h2 style={titleStyle}>Biblioteca Hajime</h2>
+        <p style={subtitleStyle}>Inicie sessão para aceder à biblioteca técnica do clube.</p>
 
         {errorMsg && <div style={errorStyle}>{errorMsg}</div>}
 
