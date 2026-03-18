@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import Footer from '@/components/Footer';
 import { 
   LayoutDashboard, Library, Users, PlusCircle, LogOut, Menu, X, 
   ShieldCheck, MessageSquare, ChevronRight, Clock, Send, Trash2, 
@@ -22,7 +23,6 @@ export default function DashboardPage() {
   const [showModalVideo, setShowModalVideo] = useState(false);
   const [submetendo, setSubmetendo] = useState(false);
   
-  // Estado do Vídeo com TODOS os campos restaurados
   const [novoVideo, setNovoVideo] = useState({ 
     titulo: '', 
     categoria: 'Nage-waza', 
@@ -126,54 +126,63 @@ export default function DashboardPage() {
         <button onClick={handleLogout} style={logoutButtonStyle}><LogOut size={18} /> Sair</button>
       </aside>
 
-      {/* CONTEÚDO PRINCIPAL */}
-      <main style={{ flex: 1, padding: isMobile ? '20px' : '40px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-        <header style={headerDashboardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            {isMobile && <Menu size={24} onClick={() => setSidebarOpen(true)} style={{ cursor: 'pointer' }} />}
-            <h1 style={{ fontSize: '24px', fontWeight: '900' }}>Olá, {perfil?.nome}</h1>
-          </div>
-          {perfil?.role === 'admin' && <div style={adminBadgeStyle}><ShieldCheck size={14} /> ADMIN</div>}
-        </header>
-
-        {/* MURAL */}
-        <div style={muralWrapperStyle}>
-          <div style={boxHeaderStyle}><MessageSquare size={20} color="#0055A4" /><h3 style={{ margin: 0, fontWeight: '800' }}>Mural da Equipa</h3></div>
-          {perfil?.role === 'admin' && (
-            <div style={inputAvisoArea}>
-              <input style={inputAvisoStyle} placeholder="Novo aviso..." value={novoAviso} onChange={(e) => setNovoAviso(e.target.value)} />
-              <button onClick={publicarAviso} style={sendBtnStyle}><Send size={18} /></button>
+      {/* ÁREA DE CONTEÚDO COM FOOTER */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <main style={{ flex: 1, padding: isMobile ? '20px' : '40px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+          <header style={headerDashboardStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              {isMobile && <Menu size={24} onClick={() => setSidebarOpen(true)} style={{ cursor: 'pointer' }} />}
+              <h1 style={{ fontSize: '24px', fontWeight: '900' }}>Olá, {perfil?.nome}</h1>
             </div>
-          )}
-          <div style={listaAvisosStyle}>
-            {avisos.map((a) => (
-              <div key={a.id} style={avisoCardStyle}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>{a.conteudo}</p>
-                  <span style={{ fontSize: '10px', color: '#94A3B8' }}>{a.autor_nome.toUpperCase()}</span>
-                </div>
-                {perfil?.role === 'admin' && <button onClick={() => eliminarAviso(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} color="#FDA4AF" /></button>}
+            {perfil?.role === 'admin' && <div style={adminBadgeStyle}><ShieldCheck size={14} /> ADMIN</div>}
+          </header>
+
+          {/* MURAL */}
+          <div style={muralWrapperStyle}>
+            <div style={boxHeaderStyle}><MessageSquare size={20} color="#0055A4" /><h3 style={{ margin: 0, fontWeight: '800' }}>Mural da Equipa</h3></div>
+            {perfil?.role === 'admin' && (
+              <div style={inputAvisoArea}>
+                <input style={inputAvisoStyle} placeholder="Novo aviso..." value={novoAviso} onChange={(e) => setNovoAviso(e.target.value)} />
+                <button onClick={publicarAviso} style={sendBtnStyle}><Send size={18} /></button>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ACÇÕES RÁPIDAS */}
-        <div style={actionsGridStyle}>
-          <div onClick={() => router.push('/planeamento')} style={actionCardStyle('#0055A4')}>
-            <CalendarCheck size={32} color="white" />
-            <h3 style={{ color: 'white', margin: '12px 0 5px 0', fontWeight: '800' }}>O Meu Plano</h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>Ver aulas agendadas</p>
-          </div>
-          {perfil?.role === 'admin' && (
-            <div onClick={() => setShowModalVideo(true)} style={actionCardStyle('#111827')}>
-              <PlusCircle size={32} color="white" />
-              <h3 style={{ color: 'white', margin: '12px 0 5px 0', fontWeight: '800' }}>Novo Vídeo</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>Adicionar técnica</p>
+            )}
+            <div style={listaAvisosStyle}>
+              {avisos.length === 0 ? (
+                <p style={{ color: '#94A3B8', fontSize: '13px' }}>Sem avisos recentes.</p>
+              ) : (
+                avisos.map((a) => (
+                  <div key={a.id} style={avisoCardStyle}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>{a.conteudo}</p>
+                      <span style={{ fontSize: '10px', color: '#94A3B8' }}>{a.autor_nome.toUpperCase()}</span>
+                    </div>
+                    {perfil?.role === 'admin' && <button onClick={() => eliminarAviso(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} color="#FDA4AF" /></button>}
+                  </div>
+                ))
+              )}
             </div>
-          )}
-        </div>
-      </main>
+          </div>
+
+          {/* ACÇÕES RÁPIDAS */}
+          <div style={actionsGridStyle}>
+            <div onClick={() => router.push('/planeamento')} style={actionCardStyle('#0055A4')}>
+              <CalendarCheck size={32} color="white" />
+              <h3 style={{ color: 'white', margin: '12px 0 5px 0', fontWeight: '800' }}>O Meu Plano</h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>Ver aulas agendadas</p>
+            </div>
+            {perfil?.role === 'admin' && (
+              <div onClick={() => setShowModalVideo(true)} style={actionCardStyle('#111827')}>
+                <PlusCircle size={32} color="white" />
+                <h3 style={{ color: 'white', margin: '12px 0 5px 0', fontWeight: '800' }}>Novo Vídeo</h3>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>Adicionar técnica</p>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* COMPONENTE FOOTER INTEGRADO NA BASE */}
+        <Footer />
+      </div>
 
       {/* MODAL VÍDEO COMPLETO */}
       {showModalVideo && (
@@ -217,7 +226,7 @@ export default function DashboardPage() {
 
               <div>
                 <label style={labelStyle}>Descrição Técnica</label>
-                <textarea rows={3} style={{ ...inputFormStyle, resize: 'none' }} placeholder="Detalhes sobre a execução, pegadas, etc..." value={novoVideo.descricao} onChange={e => setNovoVideo({...novoVideo, descricao: e.target.value})} />
+                <textarea rows={3} style={{ ...inputFormStyle, resize: 'none' }} placeholder="Detalhes sobre a execução..." value={novoVideo.descricao} onChange={e => setNovoVideo({...novoVideo, descricao: e.target.value})} />
               </div>
 
               <button disabled={submetendo} type="submit" style={btnSubmitStyle}>
