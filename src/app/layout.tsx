@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Hajime Manager",
+  title: "Biblioteca Hajime",
   description: "Biblioteca Técnica de Judo - Clube de Judo Hajime",
   manifest: "/manifest.json",
   icons: {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hajime Manager",
+    title: "Biblioteca Hajimer",
   },
 };
 
