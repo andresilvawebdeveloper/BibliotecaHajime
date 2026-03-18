@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { 
-  Library, ChevronLeft, Play, Search, Video, Trash2, Filter 
+  Library, ChevronLeft, Play, Search, Video, Trash2, Filter, Heart 
 } from 'lucide-react';
 
 export default function BibliotecaGeral() {
   const [videos, setVideos] = useState<any[]>([]);
+  const [favoritos, setFavoritos] = useState<string[]>([]); // Guarda os IDs dos vídeos favoritos
   const [perfil, setPerfil] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
@@ -16,23 +17,47 @@ export default function BibliotecaGeral() {
   const [filtroCategoria, setFiltroCategoria] = useState('Todas');
   const [filtroIdade, setFiltroIdade] = useState('Todos');
   const [pesquisa, setPesquisa] = useState('');
+  const [apenasFavoritos, setApenasFavoritos] = useState(false);
   
   const supabase = createClient();
   const router = useRouter();
 
+  const fetchData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push('/login'); return; }
+
+    // Buscar Perfil
+    const { data: pData } = await supabase.from('perfis').select('*').eq('id', user.id).single();
+    setPerfil(pData);
+
+    // Buscar Vídeos
+    const { data: vData } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
+    setVideos(vData || []);
+
+    // Buscar Favoritos do Utilizador
+    const { data: fData } = await supabase.from('favoritos').select('video_id').eq('user_id', user.id);
+    setFavoritos(fData?.map(f => f.video_id) || []);
+
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: pData } = await supabase.from('perfis').select('*').eq('id', user.id).single();
-        setPerfil(pData);
-      }
-      const { data: vData } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
-      setVideos(vData || []);
-      setLoading(false);
-    };
     fetchData();
   }, [supabase]);
+
+  const toggleFavorito = async (e: React.MouseEvent, videoId: string) => {
+    e.stopPropagation(); // Impede de abrir o detalhe do vídeo
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    if (favoritos.includes(videoId)) {
+      await supabase.from('favoritos').delete().eq('user_id', user.id).eq('video_id', videoId);
+      setFavoritos(favoritos.filter(id => id !== videoId));
+    } else {
+      await supabase.from('favoritos').insert([{ user_id: user.id, video_id: videoId }]);
+      setFavoritos([...favoritos, videoId]);
+    }
+  };
 
   const getThumbnail = (url: string) => {
     const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -49,39 +74,49 @@ export default function BibliotecaGeral() {
     }
   };
 
-  // Lógica de Filtragem Combinada (Categoria + Idade + Pesquisa)
+  // Lógica de Filtragem Combinada
   const videosExibidos = videos.filter(v => {
     const correspondeCat = filtroCategoria === 'Todas' || v.categoria === filtroCategoria;
     const correspondeIdade = filtroIdade === 'Todos' || v.faixa_etaria === filtroIdade;
     const correspondePesquisa = v.titulo.toLowerCase().includes(pesquisa.toLowerCase());
-    return correspondeCat && correspondeIdade && correspondePesquisa;
+    const correspondeFavorito = apenasFavoritos ? favoritos.includes(v.id) : true;
+    return correspondeCat && correspondeIdade && correspondePesquisa && correspondeFavorito;
   });
 
   if (loading) return <div style={centerStyle}>A carregar biblioteca...</div>;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', fontFamily: 'sans-serif', paddingBottom: '40px' }}>
       
       <header style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button onClick={() => router.push('/dashboard')} style={backBtnStyle}><ChevronLeft size={20} /></button>
           <h1 style={{ fontSize: '18px', fontWeight: '900' }}>Biblioteca Técnica</h1>
         </div>
-        <img src="/icons/logo-hajime.jpg" alt="Logo" style={{ width: '42px', borderRadius: '8px' }} />
+        <img src="/icons/logo-hajime-biblioteca.png" alt="Logo" style={{ width: '42px' }} />
       </header>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
         
-        {/* PESQUISA */}
-        <div style={searchContainerStyle}>
-          <Search size={18} color="#94A3B8" />
-          <input 
-            type="text" 
-            placeholder="Procurar por nome..." 
-            style={searchInputStyle}
-            value={pesquisa}
-            onChange={(e) => setPesquisa(e.target.value)}
-          />
+        {/* PESQUISA E FILTRO FAVORITOS */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+          <div style={searchContainerStyle}>
+            <Search size={18} color="#94A3B8" />
+            <input 
+              type="text" 
+              placeholder="Procurar por nome..." 
+              style={searchInputStyle}
+              value={pesquisa}
+              onChange={(e) => setPesquisa(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => setApenasFavoritos(!apenasFavoritos)}
+            style={favToggleButtonStyle(apenasFavoritos)}
+          >
+            <Heart size={18} fill={apenasFavoritos ? "white" : "none"} />
+            {!isMobile && (apenasFavoritos ? "Ver Todos" : "Meus Favoritos")}
+          </button>
         </div>
 
         {/* FILTROS DE CATEGORIA */}
@@ -113,6 +148,15 @@ export default function BibliotecaGeral() {
               <div key={video.id} onClick={() => router.push(`/biblioteca/${video.id}`)} style={videoCardStyle}>
                 <div style={{ position: 'relative', height: '160px', backgroundColor: '#000' }}>
                   <img src={getThumbnail(video.youtube_url) || ''} style={thumbStyle} alt={video.titulo} />
+                  
+                  {/* BOTÃO FAVORITO (CORAÇÃO) */}
+                  <button 
+                    onClick={(e) => toggleFavorito(e, video.id)}
+                    style={heartButtonStyle(favoritos.includes(video.id))}
+                  >
+                    <Heart size={18} fill={favoritos.includes(video.id) ? "#EF4444" : "none"} />
+                  </button>
+
                   {perfil?.role === 'admin' && (
                     <button onClick={(e) => removerVideo(e, video.id, video.titulo)} style={deleteButtonStyle}><Trash2 size={16} /></button>
                   )}
@@ -132,7 +176,29 @@ export default function BibliotecaGeral() {
   );
 }
 
-// ESTILOS ADICIONAIS
+// ESTILOS ATUALIZADOS
+const heartButtonStyle = (active: boolean): React.CSSProperties => ({
+  position: 'absolute', top: '10px', left: '10px', background: 'white', border: 'none', 
+  width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', 
+  justifyContent: 'center', cursor: 'pointer', color: active ? '#EF4444' : '#CBD5E1', 
+  zIndex: 11, boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+});
+
+const favToggleButtonStyle = (active: boolean): React.CSSProperties => ({
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: '8px', 
+  padding: '0 20px', 
+  borderRadius: '14px',
+  backgroundColor: active ? '#EF4444' : 'white', 
+  color: active ? 'white' : '#64748B',
+  fontWeight: '700', 
+  fontSize: '14px', 
+  cursor: 'pointer', 
+  border: active ? '1px solid #EF4444' : '1px solid #E2E8F0', // Apenas uma vez aqui
+  transition: 'all 0.2s'
+});
+
 const filterLabelStyle: React.CSSProperties = { fontSize: '11px', fontWeight: '800', color: '#94A3B8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' };
 const ageButtonStyle = (active: boolean): React.CSSProperties => ({
   padding: '8px 16px', borderRadius: '10px', border: active ? 'none' : '1px solid #E2E8F0',
@@ -140,12 +206,10 @@ const ageButtonStyle = (active: boolean): React.CSSProperties => ({
   fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
 });
 const ageBadgeStyle: React.CSSProperties = { position: 'absolute', bottom: '10px', left: '10px', backgroundColor: '#0055A4', color: 'white', padding: '3px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '900' };
-
-// (Mantenha os outros estilos do cabeçalho, grid, search e cards que já tínhamos)
 const centerStyle: React.CSSProperties = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif' };
 const headerStyle: React.CSSProperties = { backgroundColor: 'white', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E5E7EB', position: 'sticky', top: 0, zIndex: 50 };
 const backBtnStyle: React.CSSProperties = { background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#111827', padding: '8px', borderRadius: '10px' };
-const searchContainerStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'white', padding: '12px 16px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '20px' };
+const searchContainerStyle: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'white', padding: '12px 16px', borderRadius: '14px', border: '1px solid #E2E8F0' };
 const searchInputStyle: React.CSSProperties = { border: 'none', outline: 'none', width: '100%', fontSize: '14px', fontWeight: '500' };
 const filterContainerStyle: React.CSSProperties = { display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px' };
 const filterButtonStyle = (active: boolean): React.CSSProperties => ({
@@ -159,3 +223,6 @@ const thumbStyle: React.CSSProperties = { width: '100%', height: '100%', objectF
 const deleteButtonStyle: React.CSSProperties = { position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(255,255,255,0.9)', color: '#E11D48', padding: '5px', borderRadius: '6px', border: 'none', cursor: 'pointer', zIndex: 10 };
 const playOverlayStyle: React.CSSProperties = { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.1)' };
 const emptyStateStyle: React.CSSProperties = { textAlign: 'center', padding: '40px', color: '#94A3B8', backgroundColor: 'white', borderRadius: '20px', border: '1px solid #E2E8F0' };
+
+// Detetar se é mobile para esconder texto do botão favoritos
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
