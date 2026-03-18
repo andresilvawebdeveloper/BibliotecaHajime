@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import Footer from '@/components/Footer';
 import { 
   LayoutDashboard, Library, Users, PlusCircle, LogOut, Menu, X, 
   ShieldCheck, MessageSquare, ChevronRight, Clock, Send, Trash2, 
@@ -126,7 +125,7 @@ export default function DashboardPage() {
         <button onClick={handleLogout} style={logoutButtonStyle}><LogOut size={18} /> Sair</button>
       </aside>
 
-      {/* ÁREA DE CONTEÚDO COM FOOTER */}
+      {/* ÁREA DE CONTEÚDO PRINCIPAL (Sem Footer) */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <main style={{ flex: 1, padding: isMobile ? '20px' : '40px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
           <header style={headerDashboardStyle}>
@@ -179,9 +178,6 @@ export default function DashboardPage() {
             )}
           </div>
         </main>
-
-        {/* COMPONENTE FOOTER INTEGRADO NA BASE */}
-        <Footer />
       </div>
 
       {/* MODAL VÍDEO COMPLETO */}
