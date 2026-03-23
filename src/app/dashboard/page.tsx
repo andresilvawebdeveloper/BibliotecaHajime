@@ -52,6 +52,13 @@ export default function DashboardPage() {
       setUser(user);
       
       const { data: pData } = await supabase.from('perfis').select('*').eq('id', user.id).single();
+      
+      // BLOQUEIO DE SEGURANÇA: Se não for admin e não estiver aprovado, vai para a página pendente
+      if (pData && pData.role !== 'admin' && pData.aprovado === false) {
+        router.push('/pendente');
+        return;
+      }
+
       setPerfil(pData);
 
       const { data: aData } = await supabase.from('avisos').select('*').order('created_at', { ascending: false }).limit(5);
@@ -103,7 +110,7 @@ export default function DashboardPage() {
     setSubmetendo(false);
   };
 
-  if (loading) return <div style={centerStyle}>A carregar...</div>;
+  if (loading) return <div style={centerStyle}>A verificar credenciais...</div>;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8FAFC', fontFamily: 'sans-serif' }}>
@@ -111,7 +118,7 @@ export default function DashboardPage() {
       {/* SIDEBAR */}
       <aside style={sidebarStyle(isSidebarOpen, isMobile)}>
         <div style={logoAreaStyle}>
-          <img src="/icons/logo-hajime.jpg" alt="Logo" style={{ width: '40px', borderRadius: '8px' }} />
+          <img src="/icons/logo-hajime-biblioteca.png" alt="Logo" style={{ width: '40px', borderRadius: '8px' }} />
           <div><h2 style={{ fontSize: '15px', fontWeight: '800', margin: 0 }}>Hajime</h2><p style={{ fontSize: '10px', color: '#9CA3AF', margin: 0 }}>MANAGER</p></div>
         </div>
         <nav style={{ flex: 1, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -125,7 +132,7 @@ export default function DashboardPage() {
         <button onClick={handleLogout} style={logoutButtonStyle}><LogOut size={18} /> Sair</button>
       </aside>
 
-      {/* ÁREA DE CONTEÚDO PRINCIPAL (Sem Footer) */}
+      {/* ÁREA DE CONTEÚDO PRINCIPAL */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <main style={{ flex: 1, padding: isMobile ? '20px' : '40px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
           <header style={headerDashboardStyle}>
@@ -236,7 +243,7 @@ export default function DashboardPage() {
   );
 }
 
-// ESTILOS
+// ESTILOS (Inalterados)
 const centerStyle: React.CSSProperties = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold' };
 const sidebarStyle = (open: boolean, mobile: boolean): React.CSSProperties => ({ width: '260px', backgroundColor: '#111827', color: 'white', display: 'flex', flexDirection: 'column', position: mobile ? 'fixed' : 'relative', height: '100vh', zIndex: 100, transform: mobile ? (open ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)', transition: 'transform 0.3s' });
 const logoAreaStyle: React.CSSProperties = { padding: '30px 24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #1F2937' };

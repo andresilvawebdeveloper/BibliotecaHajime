@@ -15,7 +15,12 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data: authData, error: authError } = await supabase.auth.signUp({ email: dados.email, password: dados.password });
+    setErrorMsg('');
+
+    const { data: authData, error: authError } = await supabase.auth.signUp({ 
+      email: dados.email, 
+      password: dados.password 
+    });
 
     if (authError) {
       setErrorMsg(authError.message);
@@ -25,19 +30,30 @@ export default function SignupPage() {
 
     if (authData.user) {
       const { error: profileError } = await supabase.from('perfis').upsert({
-        id: authData.user.id, nome: dados.nome, apelido: dados.apelido,
-        data_nascimento: dados.data_nascimento, email: dados.email, role: 'treinador', aprovado: false
+        id: authData.user.id, 
+        nome: dados.nome, 
+        apelido: dados.apelido,
+        data_nascimento: dados.data_nascimento, 
+        email: dados.email, 
+        role: 'treinador', 
+        aprovado: false // Garante que começa como não aprovado
       });
 
-      if (profileError) setErrorMsg(profileError.message);
-      else { router.push('/dashboard'); router.refresh(); }
+      if (profileError) {
+        setErrorMsg(profileError.message);
+        setLoading(false);
+      } else { 
+        // REDIRECIONAMENTO CORRIGIDO: Vai para a página de espera
+        router.push('/pendente'); 
+        router.refresh(); 
+      }
     }
   };
 
   return (
     <div style={containerStyle}>
       <form onSubmit={handleSignup} style={formStyle}>
-        <img src="/icons/logo-hajime.png" alt="Hajime" style={logoStyle} />
+        <img src="/icons/logo-hajime-biblioteca.png" alt="Hajime" style={logoStyle} />
         <h2 style={titleStyle}>Novo Treinador</h2>
         <p style={subtitleStyle}>Crie a sua conta para solicitar acesso.</p>
 
@@ -81,7 +97,7 @@ export default function SignupPage() {
   );
 }
 
-// ESTILOS DARK MODE (Consistentes)
+// ESTILOS
 const containerStyle: React.CSSProperties = { 
   height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', 
   backgroundColor: '#0F172A', padding: '20px', fontFamily: 'sans-serif' 
